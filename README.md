@@ -1,4 +1,3 @@
-\
 # Estacionamento (Fullstack)
 
 Projeto completo **do zero** com back-end (.NET 8, EF Core, MySQL) e front-end (React + Vite + TS), cobrando **R$ 8,00 por cada 30 minutos** com **arredondamento para cima**.
