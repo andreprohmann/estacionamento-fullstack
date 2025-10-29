@@ -1,31 +1,30 @@
-using Estacionamento.Api.Data;
-using Estacionamento.Api.Services;
+using Backend.Data;
+using Backend.Endpoints;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
-
-const string CORS_FRONT = "cors_front";
-builder.Services.AddCors(opt =>
+// CORS para o frontend local (Vite padrão 5173)
+var frontendOrigin = "http://localhost:5173";
+builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
 {
-    opt.AddPolicy(CORS_FRONT, policy =>
-        policy.WithOrigins("http://localhost:5173")
-              .AllowAnyMethod()
-              .AllowAnyHeader());
-});
+    p.WithOrigins(frontendOrigin)
+    .AllowAnyHeader()
+    .AllowAnyMethod();
+}));
 
-var conn = builder.Configuration.GetConnectionString("Default");
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseMySql(conn, ServerVersion.AutoDetect(conn))
-);
+// DbContext + Pomelo MySQL
+var cs = builder.Configuration.GetConnectionString("DefaultConnection")!;
+builder.Services.AddDbContext<AppDbContext>(opt =>
+    opt.UseMySql(cs, ServerVersion.AutoDetect(cs)));
 
-builder.Services.AddScoped<IVagaService, VagaService>();
-
+// Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.UseCors();
 
 if (app.Environment.IsDevelopment())
 {
@@ -33,8 +32,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-app.UseCors(CORS_FRONT);
-app.MapControllers();
+app.MapVagasEndpoints();
+app.MapVeiculosEndpoints();
+
+// Seed/Migrate
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await Seed.InitializeAsync(db);
+}
 
 app.Run();

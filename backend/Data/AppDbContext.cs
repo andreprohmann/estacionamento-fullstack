@@ -1,25 +1,22 @@
 
-using Estacionamento.Api.Models;
+using Backend.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace Estacionamento.Api.Data
+namespace Backend.Data
 {
     public class AppDbContext : DbContext
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) {}
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-        public DbSet<Vaga> Vagas => Set<Vaga>();
+        public DbSet<Vaga> Vagas { get; set; }
+        public DbSet<Veiculo> Veiculos { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            base.OnModelCreating(modelBuilder);
-            modelBuilder.Entity<Vaga>(entity =>
-            {
-                entity.Property(p => p.ValorCobrado).HasPrecision(10, 2);
-                entity.Property(p => p.Placa).HasMaxLength(10).IsRequired();
-                entity.Property(p => p.Marca).HasMaxLength(60).IsRequired();
-                entity.Property(p => p.Modelo).HasMaxLength(60).IsRequired();
-            });
+            modelBuilder.Entity<Vaga>()
+                .HasOne(v => v.VeiculoAtual)
+                .WithOne(v => v.Vaga)
+                .HasForeignKey<Veiculo>(v => v.VagaId);
         }
     }
 }
